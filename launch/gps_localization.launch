@@ -3,15 +3,11 @@
       <param name="dx_body" value="0.5" />
       <param name="dy_body" value="0.0" />
     </node>
+    
     <node name="nmea_serial_driver" pkg="nmea_navsat_driver" type="nmea_serial_driver" output="screen" />
-    <!-- <node name="imu_gps_localization_node" pkg="imu_gps_localization" type="imu_gps_localization_node" output="screen" /> -->
-    <!-- <node name="send_goal" pkg="imu_gps_localization" type="send_goal" output="screen" /> -->
-    <!-- <node name="rqt_tf_tree" pkg="rqt_tf_tree" type="rqt_tf_tree" output="screen" /> -->
-    <!-- <node name="move_base" pkg="move_base" type="move_base" output="screen" /> -->
 
     <node pkg="rviz" type="rviz" name="rviz" output="screen" 
       args="-d $(find gps_localization)/rviz/gps.rviz" required="true">
     </node>
-     <!-- <include file="$(find gps_cmd_pub)/launch/gps_cmd_pub.launch" />  -->
 
 </launch>
