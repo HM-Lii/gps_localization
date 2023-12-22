@@ -3,7 +3,6 @@
       <param name="dx_body" value="0.5" />
       <param name="dy_body" value="0.0" />
     </node>
-    
     <node name="nmea_serial_driver" pkg="nmea_navsat_driver" type="nmea_serial_driver" output="screen" />
 
     <node pkg="rviz" type="rviz" name="rviz" output="screen" 
