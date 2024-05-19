@@ -31,13 +31,13 @@ public:
     }
 
     void spin() {
-        ros::AsyncSpinner spinner(4);  
+        ros::AsyncSpinner spinner(2);  
         spinner.start(); 
         ros::Rate rate(1);
         while(ros::ok())
-        {
+        {  
             path_publisher.publish(path);
-            MqttCom_.publish("gecao",latitude,longitude,vel,100);
+            // MqttCom_.publish("gecao/upload",latitude,longitude,vel,100);
             rate.sleep();
         }
         spinner.stop();
