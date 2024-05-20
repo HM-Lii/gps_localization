@@ -12,10 +12,16 @@
 
 class MqttCom {
  public:
-  MqttCom() : nh_("~") {
+  MqttCom(ros::NodeHandle& nh_)  {
     nh_.param("server_address", server_address_,
               std::string("tcp://120.77.28.253:1883"));
     nh_.param("client_id", client_id_, std::string("lhm"));
+    nh_.param("id", id, std::string("1"));
+    nh_.param("topic", topic, std::string("gecao/upload"));
+    nh_.param("name", name, std::string("农用割草机AH-1"));
+    nh_.param("code", code, 0);
+    nh_.param("message", message, std::string("在线"));
+    work_publisher = nh_.advertise<std_msgs::Int8>("/cmd_work", 10);
     cb_.setMqttCom(this);
     client_ = std::make_shared<mqtt::async_client>(server_address_, client_id_);
     client_->set_callback(cb_);
@@ -34,6 +40,7 @@ class MqttCom {
     client_->publish(pubmsg);
     printJson(pubmsg);
   }
+  
   void processJsonMessage(const rapidjson::Document& doc) {
     if (doc.HasMember("machineId") && doc.HasMember("routeFile") &&
         doc.HasMember("taskType") && doc.HasMember("taskId") &&
@@ -41,8 +48,11 @@ class MqttCom {
       machine_id = doc["machineId"].GetInt();
       task_type = doc["taskType"].GetInt();
       task_id = doc["taskId"].GetInt();
-      if (task_id) {
-        std::cout << "mower start" << std::endl;
+      if (task_type==1) { 
+        std_msgs::Int8 msg;
+        msg.data=1;     
+        work_publisher.publish(msg);
+        std::cout << "mower starting..." << std::endl;
       }
     } else {
       std::cerr << "Received  JSON  does  not  contain  the  expected  data."
@@ -80,14 +90,9 @@ class MqttCom {
     doc.SetObject();
     rapidjson::Document::AllocatorType& allocator = doc.GetAllocator();
 
-    std::string id, topic, name, message;
-    int code;
 
-    nh_.param("id", id, std::string("1"));
-    nh_.param("topic", topic, std::string("gecao/upload"));
-    nh_.param("name", name, std::string("农用割草机AH-1"));
-    nh_.param("code", code, 0);
-    nh_.param("message", message, std::string("在线"));
+
+
     rapidjson::Value id_value(id.c_str(), allocator);
     rapidjson::Value topic_value(topic.c_str(), allocator);
     rapidjson::Value name_value(name.c_str(), allocator);
@@ -123,10 +128,11 @@ class MqttCom {
   std::shared_ptr<mqtt::async_client> client_;
   mqtt_callback cb_;
   mqtt::connect_options connOpts_;
-  ros::NodeHandle nh_;
   std::string server_address_;
   std::string client_id_;
-
+  std::string id, topic, name, message;
+  int code;
+  ros::Publisher work_publisher;
   int machine_id;
   int task_type;
   int task_id;

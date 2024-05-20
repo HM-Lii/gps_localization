@@ -3,6 +3,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
 #include <sensor_msgs/NavSatFix.h>
+#include <std_msgs/Int8.h>
 #include <geometry_msgs/Pose2D.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
@@ -14,21 +15,30 @@ using namespace GeographicLib;
 
 class GpsLocalization {
 public:
-    GpsLocalization() : is_first_fix(true), gps_heading(0), enu_heading(0), body_dx(0), body_dy(0),
-                        earth_model(Constants::WGS84_a(), Constants::WGS84_f()) {
-        ros::NodeHandle nh;
-        nh.param("gps_localization/body_dx", body_dx, 0.0);
-        nh.param("/gps_localization/body_dy", body_dy, 0.0);
+ GpsLocalization()
+     : is_first_fix(true),
+       gps_heading(0),
+       enu_heading(0),
+       body_dx(0),
+       body_dy(0),
+       earth_model(Constants::WGS84_a(), Constants::WGS84_f())  
+       {
+   MqttCom_ = std::make_unique<MqttCom>(nh);
+   nh.param("gps_localization/body_dx", body_dx, 0.0);
+   nh.param("/gps_localization/body_dy", body_dy, 0.0);
 
-        fix_subscriber = nh.subscribe("/fix", 10, &GpsLocalization::fixCallback, this);
-        heading_subscriber = nh.subscribe("/heading", 10, &GpsLocalization::headingCallback, this);
-        vel_subscriber = nh.subscribe("/vel", 10, &GpsLocalization::velCallback, this);
+   fix_subscriber =
+       nh.subscribe("/fix", 10, &GpsLocalization::fixCallback, this);
+   heading_subscriber =
+       nh.subscribe("/heading", 10, &GpsLocalization::headingCallback, this);
+   vel_subscriber =
+       nh.subscribe("/vel", 10, &GpsLocalization::velCallback, this);
+   work_publisher = nh.advertise<std_msgs::Int8>("/cmd_work", 10);
+   odometry_publisher = nh.advertise<nav_msgs::Odometry>("/Odometry", 10);
+   path_publisher = nh.advertise<nav_msgs::Path>("/path", 10);
 
-        odometry_publisher = nh.advertise<nav_msgs::Odometry>("/Odometry", 10);
-        path_publisher = nh.advertise<nav_msgs::Path>("/path", 10);
-
-        path.header.frame_id = "camera_init";
-    }
+   path.header.frame_id = "camera_init";
+ }
 
     void spin() {
         ros::AsyncSpinner spinner(2);  
@@ -37,7 +47,7 @@ public:
         while(ros::ok())
         {  
             path_publisher.publish(path);
-            // MqttCom_.publish("gecao/upload",latitude,longitude,vel,100);
+            // MqttCom_->publish("gecao/upload",latitude,longitude,vel,100);
             rate.sleep();
         }
         spinner.stop();
@@ -50,10 +60,10 @@ private:
     Geocentric earth_model;  
     LocalCartesian local_projector; 
     nav_msgs::Path path; 
-    ros::Publisher odometry_publisher, path_publisher;  
+    ros::Publisher odometry_publisher, path_publisher,work_publisher;  
     ros::Subscriber fix_subscriber, heading_subscriber,vel_subscriber;  
-    MqttCom MqttCom_;
-
+    std::unique_ptr<MqttCom> MqttCom_;
+    ros::NodeHandle nh;
     void headingCallback(const geometry_msgs::Pose2DPtr &msg) {
         gps_heading = msg->theta;
         enu_heading = 90 - gps_heading;
