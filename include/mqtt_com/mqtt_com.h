@@ -21,7 +21,7 @@ class MqttCom {
     nh_.param("name", name, std::string("农用割草机AH-1"));
     nh_.param("code", code, 0);
     nh_.param("message", message, std::string("在线"));
-    work_publisher = nh_.advertise<std_msgs::Int8>("/cmd_work", 10);
+    work_publisher = nh_.advertise<std_msgs::Int8>("/cmd_go", 10);
     cb_.setMqttCom(this);
     client_ = std::make_shared<mqtt::async_client>(server_address_, client_id_);
     client_->set_callback(cb_);
