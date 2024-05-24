@@ -21,7 +21,8 @@ class MqttCom {
     nh_.param("name", name, std::string("农用割草机AH-1"));
     nh_.param("code", code, 0);
     nh_.param("message", message, std::string("在线"));
-    work_publisher = nh_.advertise<std_msgs::Int8>("/cmd_go", 10);
+    go_publisher = nh_.advertise<std_msgs::Int8>("/cmd_go", 10);
+    work_publisher = nh_.advertise<std_msgs::Int8>("/cmd_work", 10);
     cb_.setMqttCom(this);
     client_ = std::make_shared<mqtt::async_client>(server_address_, client_id_);
     client_->set_callback(cb_);
@@ -47,14 +48,25 @@ class MqttCom {
         doc.HasMember("topic")) {
       machine_id = doc["machineId"].GetInt();
       task_type = doc["taskType"].GetInt();
+      ROS_INFO("taskType: %d",task_type);
       task_id = doc["taskId"].GetInt();
-      if (task_type==1) { 
+      if (task_type==01) { 
+        std_msgs::Int8 msg;
+        msg.data=1;     
+        go_publisher.publish(msg);
+        std::cout << "mower start going..." << std::endl;
+      }
+      else if (task_type==11) {
         std_msgs::Int8 msg;
         msg.data=1;     
         work_publisher.publish(msg);
-        std::cout << "mower starting..." << std::endl;
+        std::cout << "mower start working..." << std::endl;
       }
-    } else {
+      else{
+        std::cout << "task type error" << std::endl;
+      }
+    } 
+    else {
       std::cerr << "Received  JSON  does  not  contain  the  expected  data."
                 << std::endl;
     }
@@ -70,7 +82,7 @@ class MqttCom {
       std::cout << "消息发送完成" << std::endl;
     }
     void message_arrived(mqtt::const_message_ptr msg) override {
-      std::cout << "Message  arrived:  " << msg->to_string() << std::endl;
+      // std::cout << "Message  arrived:  " << msg->to_string() << std::endl;
       rapidjson::Document document;
       document.Parse(msg->to_string().c_str());
       //  处理JSON数据
@@ -132,7 +144,7 @@ class MqttCom {
   std::string client_id_;
   std::string id, topic, name, message;
   int code;
-  ros::Publisher work_publisher;
+  ros::Publisher go_publisher,work_publisher;
   int machine_id;
   int task_type;
   int task_id;
