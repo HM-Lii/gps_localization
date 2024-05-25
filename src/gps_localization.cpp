@@ -7,8 +7,8 @@
 #include <geometry_msgs/Pose2D.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
-#include <GeographicLib/Geocentric.hpp>
-#include <GeographicLib/LocalCartesian.hpp>
+#include <Geocentric.hpp>
+#include <LocalCartesian.hpp>
 #include <mqtt_com/mqtt_com.h>
 
 using namespace GeographicLib;
