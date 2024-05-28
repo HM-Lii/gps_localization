@@ -33,7 +33,6 @@ public:
        nh.subscribe("/heading", 10, &GpsLocalization::headingCallback, this);
    vel_subscriber =
        nh.subscribe("/vel", 10, &GpsLocalization::velCallback, this);
-   work_publisher = nh.advertise<std_msgs::Int8>("/cmd_work", 10);
    odometry_publisher = nh.advertise<nav_msgs::Odometry>("/Odometry", 10);
    path_publisher = nh.advertise<nav_msgs::Path>("/path", 10);
 
@@ -60,7 +59,7 @@ private:
     Geocentric earth_model;  
     LocalCartesian local_projector; 
     nav_msgs::Path path; 
-    ros::Publisher odometry_publisher, path_publisher,work_publisher;  
+    ros::Publisher odometry_publisher, path_publisher;  
     ros::Subscriber fix_subscriber, heading_subscriber,vel_subscriber;  
     std::unique_ptr<MqttCom> MqttCom_;
     ros::NodeHandle nh;
