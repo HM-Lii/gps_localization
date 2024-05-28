@@ -7,8 +7,8 @@
 #include <geometry_msgs/Pose2D.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
-#include <GeographicLib/Geocentric.hpp>
-#include <GeographicLib/LocalCartesian.hpp>
+#include <Geocentric.hpp>
+#include <LocalCartesian.hpp>
 #include <mqtt_com/mqtt_com.h>
 
 using namespace GeographicLib;
@@ -67,7 +67,7 @@ private:
     void headingCallback(const geometry_msgs::Pose2DPtr &msg) {
         gps_heading = msg->theta;
         enu_heading = 90 - gps_heading;
-        if (enu_heading < 0) {
+        if (enu_heading < -180) {
             enu_heading += 360;
         }
     }
