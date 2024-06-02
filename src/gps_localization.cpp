@@ -16,13 +16,13 @@ using namespace GeographicLib;
 class GpsLocalization {
 public:
  GpsLocalization()
-     : is_first_fix(true),
+     : initialized_(false),
+       wait_count(0),
        gps_heading(0),
        enu_heading(0),
        body_dx(0),
        body_dy(0),
-       earth_model(Constants::WGS84_a(), Constants::WGS84_f())  
-       {
+       earth_model(Constants::WGS84_a(), Constants::WGS84_f()) {
    MqttCom_ = std::make_unique<MqttCom>(nh);
    nh.param("gps_localization/body_dx", body_dx, 0.0);
    nh.param("/gps_localization/body_dy", body_dy, 0.0);
@@ -53,8 +53,8 @@ public:
     }
 
 private:
-    bool is_first_fix;
-    int wait_count=0;
+    bool initialized_;
+    int wait_count;
     double gps_heading, enu_heading ,latitude,longitude,vel,body_dx, body_dy;
     Geocentric earth_model;  
     LocalCartesian local_projector; 
@@ -72,22 +72,30 @@ private:
     }
 
     void fixCallback(const sensor_msgs::NavSatFix::ConstPtr& msg) {
-      if (is_first_fix) {
-        if (wait_count != 10) {
+      if (msg->status.status == sensor_msgs::NavSatStatus::STATUS_GBAS_FIX) {
+        if ((!initialized_) && (wait_count != 10)) {
           wait_count++;
+          ROS_INFO("Get the %i st fix and heading.", wait_count);
           return;
+        } else {
+          ROS_INFO(
+              "Get the final  fix  and  heading.initialize the projector.");
+          // 执行初始化操作
+          local_projector.Reset(msg->latitude, msg->longitude, msg->altitude);
+          // 设置初始化完成标志
+          initialized_ = true;
         }
-        local_projector.Reset(msg->latitude, msg->longitude, msg->altitude);
-        is_first_fix = false;
       }
-        updateMqttMsg(msg);
-        double x, y, z;
-        local_projector.Forward(msg->latitude, msg->longitude, msg->altitude, x, y, z);
-        tf2::Transform transform = getTransform();
-        tf2::Vector3 enu_offset = getEnuOffset(transform);
-        x += enu_offset.getX();
-        y += enu_offset.getY();
-        publishOdometry(x, y, z);
+
+      updateMqttMsg(msg);
+      double x, y, z;
+      local_projector.Forward(msg->latitude, msg->longitude, msg->altitude, x,
+                              y, z);
+      tf2::Transform transform = getTransform();
+      tf2::Vector3 enu_offset = getEnuOffset(transform);
+      x += enu_offset.getX();
+      y += enu_offset.getY();
+      publishOdometry(x, y, z);
     }
 
     void velCallback(const geometry_msgs::TwistStamped::ConstPtr& msg) {
